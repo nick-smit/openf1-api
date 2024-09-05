@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Interval;
@@ -32,8 +33,7 @@ class TimeGap
      */
     public function __construct(
         float|string|null $gap
-    )
-    {
+    ) {
         $this->isLeader = $gap === 0.0 || $gap === null;
         if (is_float($gap) || $gap === null) {
             $this->gap = $gap > 0 ? $gap : null;

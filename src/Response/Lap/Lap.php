@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Lap;
@@ -64,8 +65,7 @@ class Lap
         public readonly array             $segmentsSector3,
         public readonly int               $sessionKey,
         public readonly int               $stSpeed,
-    )
-    {
+    ) {
         $this->assertSegmentSector($this->segmentsSector1);
         $this->assertSegmentSector($this->segmentsSector2);
         $this->assertSegmentSector($this->segmentsSector3);

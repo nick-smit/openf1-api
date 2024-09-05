@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Weather;
@@ -7,7 +8,6 @@ use DateTimeImmutable;
 
 class Weather
 {
-
     /**
      * @param float $airTemperature Air temperature (°C).
      * @param DateTimeImmutable $date The UTC date and time, in ISO 8601 format.
@@ -30,7 +30,7 @@ class Weather
         public readonly int               $sessionKey,
         public readonly float             $trackTemperature,
         public readonly int               $windDirection,
-        public readonly float             $windSpeed)
-    {
+        public readonly float             $windSpeed
+    ) {
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Interval;
@@ -22,8 +23,7 @@ class Interval
         public readonly TimeGap           $interval,
         public readonly int               $meetingKey,
         public readonly int               $sessionKey,
-    )
-    {
+    ) {
 
     }
 }

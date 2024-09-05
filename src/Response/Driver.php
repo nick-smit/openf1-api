@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response;
@@ -32,8 +33,7 @@ class Driver
         public readonly ?string $lastName,
         public readonly ?string $teamColour,
         public readonly ?string $teamName,
-    )
-    {
+    ) {
 
     }
 }

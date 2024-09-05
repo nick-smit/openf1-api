@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Session;
@@ -39,8 +40,7 @@ class Session
         public readonly string            $sessionName,
         public readonly SessionType       $sessionType,
         public readonly int               $year,
-    )
-    {
+    ) {
 
     }
 }

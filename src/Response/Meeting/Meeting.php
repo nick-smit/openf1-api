@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Meeting;
@@ -33,7 +34,6 @@ class Meeting
         public readonly string            $meetingName,
         public readonly string            $meetingOfficialName,
         public readonly int               $year,
-    )
-    {
+    ) {
     }
 }

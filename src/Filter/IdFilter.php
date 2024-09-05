@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Filter;
@@ -14,8 +15,7 @@ class IdFilter implements InputFilter
     public function __construct(
         public readonly ?int $id = null,
         public readonly bool $latest = false,
-    )
-    {
+    ) {
         if ($this->id !== null && $this->latest) {
             throw new InvalidArgumentException('Exact and latest cannot be set at the same time');
         }

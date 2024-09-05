@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Filter;
@@ -15,8 +16,7 @@ class DateFilter
         public readonly ?DateTimeInterface $exactDate = null,
         public readonly ?DateTimeInterface $afterDate = null,
         public readonly ?DateTimeInterface $beforeDate = null
-    )
-    {
+    ) {
         if (!$this->exactDate instanceof DateTimeInterface && !$this->afterDate instanceof DateTimeInterface && !$this->beforeDate instanceof DateTimeInterface) {
             throw new InvalidArgumentException('Either one of exactDate, afterDate or beforeDate must not be null.');
         }

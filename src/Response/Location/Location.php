@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Location;
@@ -24,7 +25,6 @@ class Location
         public readonly int               $x,
         public readonly int               $y,
         public readonly int               $z,
-    )
-    {
+    ) {
     }
 }

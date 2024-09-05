@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Position;
@@ -20,8 +21,7 @@ class Position
         public readonly int               $meetingKey,
         public readonly int               $position,
         public readonly int               $sessionKey,
-    )
-    {
+    ) {
 
     }
 }

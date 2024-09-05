@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Factory;
@@ -10,8 +11,7 @@ class OpenF1ApiClientFactory
 {
     public function create(
         array $guzzleConfig = [],
-    ): OpenF1ApiClient
-    {
+    ): OpenF1ApiClient {
         $client = new Client(array_merge(['base_uri' => 'https://api.openf1.org/v1'], $guzzleConfig));
 
         return new OpenF1ApiClient($client, new QueryParameterFactory());

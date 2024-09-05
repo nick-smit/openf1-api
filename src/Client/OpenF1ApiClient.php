@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Client;
@@ -46,8 +47,7 @@ class OpenF1ApiClient
     public function __construct(
         private readonly Client                $client,
         private readonly QueryParameterFactory $queryParameterFactory
-    )
-    {
+    ) {
     }
 
     /**
@@ -77,8 +77,7 @@ class OpenF1ApiClient
         ?IdFilter     $sessionKey = null,
         ?NumberFilter $speed = null,
         ?NumberFilter $throttle = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -215,8 +214,7 @@ class OpenF1ApiClient
         ?IdFilter $sessionKey = null,
         ?string   $teamColour = null,
         ?string   $teamName = null
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'broadcast_name' => $broadcastName,
             'country_code' => $countryCode,
@@ -238,7 +236,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Driver => new Driver(
+        return array_map(static fn (array $item): Driver => new Driver(
             $item['driver_number'],
             $item['broadcast_name'],
             $item['full_name'],
@@ -279,8 +277,7 @@ class OpenF1ApiClient
         ?NumberFilter $interval = null,
         ?IdFilter     $meetingKey = null,
         ?IdFilter     $sessionKey = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -296,7 +293,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Interval => new Interval(
+        return array_map(static fn (array $item): Interval => new Interval(
             self::fromIso8601($item['date']),
             $item['driver_number'],
             new TimeGap($item['gap_to_leader']),
@@ -340,8 +337,7 @@ class OpenF1ApiClient
         ?IdFilter     $meetingKey = null,
         ?IdFilter     $sessionKey = null,
         ?NumberFilter $stSpeed = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'driver_number' => $driverNumber,
             'duration_sector_1' => $durationSector1,
@@ -364,7 +360,7 @@ class OpenF1ApiClient
         $this->assertResponseIsArray($decodedResponse, $response);
 
         return array_map(static function (array $item): Lap {
-            $segmentSectorToEnum = static fn(int $segment): SegmentSector => SegmentSector::fromInt($segment);
+            $segmentSectorToEnum = static fn (int $segment): SegmentSector => SegmentSector::fromInt($segment);
 
             return new Lap(
                 self::fromIso8601($item['date_start']),
@@ -415,8 +411,7 @@ class OpenF1ApiClient
         ?int        $x = null,
         ?int        $y = null,
         ?int        $z = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -433,7 +428,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Location => new Location(
+        return array_map(static fn (array $item): Location => new Location(
             self::fromIso8601($item['date']),
             $item['driver_number'],
             $item['meeting_key'],
@@ -495,8 +490,7 @@ class OpenF1ApiClient
         ?string            $meetingName = null,
         ?string            $meetingOfficialName = null,
         ?int               $year = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'circuit_key' => $circuitKey,
             'circuit_short_name' => $circuitShortName,
@@ -518,7 +512,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Meeting => new Meeting(
+        return array_map(static fn (array $item): Meeting => new Meeting(
             $item['circuit_key'],
             $item['circuit_short_name'],
             $item['country_code'],
@@ -557,8 +551,7 @@ class OpenF1ApiClient
         ?IdFilter     $meetingKey = null,
         ?NumberFilter $pitDuration = null,
         ?IdFilter     $sessionKey = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -574,7 +567,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Pit => new Pit(
+        return array_map(static fn (array $item): Pit => new Pit(
             self::fromIso8601($item['date']),
             $item['driver_number'],
             $item['lap_number'],
@@ -604,8 +597,7 @@ class OpenF1ApiClient
         ?IdFilter     $meetingKey = null,
         ?NumberFilter $position = null,
         ?IdFilter     $sessionKey = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -620,7 +612,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Position => new Position(
+        return array_map(static fn (array $item): Position => new Position(
             self::fromIso8601($item['date']),
             $item['driver_number'],
             $item['meeting_key'],
@@ -659,8 +651,7 @@ class OpenF1ApiClient
         ?RaceControlScope    $scope = null,
         ?NumberFilter        $sector = null,
         ?IdFilter            $sessionKey = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'category' => $category,
             'date' => $date,
@@ -680,7 +671,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): RaceControl => new RaceControl(
+        return array_map(static fn (array $item): RaceControl => new RaceControl(
             RaceControlCategory::from($item['category']),
             self::fromIso8601($item['date']),
             $item['driver_number'],
@@ -735,8 +726,7 @@ class OpenF1ApiClient
         ?string            $sessionName = null,
         ?SessionType       $sessionType = null,
         ?int               $year = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'circuit_key' => $circuitKey,
             'circuit_short_name' => $circuitShortName,
@@ -760,7 +750,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Session => new Session(
+        return array_map(static fn (array $item): Session => new Session(
             $item['circuit_key'],
             $item['circuit_short_name'],
             $item['country_code'],
@@ -805,8 +795,7 @@ class OpenF1ApiClient
         ?IdFilter     $sessionKey = null,
         ?NumberFilter $stintNumber = null,
         ?NumberFilter $tyreAgeAtStart = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'compound' => $compound,
             'driver_number' => $driverNumber,
@@ -824,7 +813,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Stint => new Stint(
+        return array_map(static fn (array $item): Stint => new Stint(
             $item['compound'] !== null ? TyreCompound::from($item['compound']) : null,
             $item['driver_number'],
             $item['lap_end'],
@@ -855,8 +844,7 @@ class OpenF1ApiClient
         ?int        $driverNumber = null,
         ?IdFilter   $meetingKey = null,
         ?IdFilter   $sessionKey = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'date' => $date,
             'driver_number' => $driverNumber,
@@ -870,7 +858,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): TeamRadio => new TeamRadio(
+        return array_map(static fn (array $item): TeamRadio => new TeamRadio(
             self::fromIso8601($item['date']),
             $item['driver_number'],
             $item['meeting_key'],
@@ -909,8 +897,7 @@ class OpenF1ApiClient
         ?NumberFilter $trackTemperature = null,
         ?NumberFilter $windDirection = null,
         ?NumberFilter $windSpeed = null,
-    ): array
-    {
+    ): array {
         $queryParams = $this->queryParameterFactory->createParameters([
             'air_temperature' => $airTemperature,
             'date' => $date,
@@ -930,7 +917,7 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static fn(array $item): Weather => new Weather(
+        return array_map(static fn (array $item): Weather => new Weather(
             $item['air_temperature'],
             self::fromIso8601($item['date']),
             $item['humidity'],

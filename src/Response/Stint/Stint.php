@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Stint;
@@ -7,7 +8,6 @@ use NickSmit\OpenF1Api\Enumeration\TyreCompound;
 
 class Stint
 {
-
     /**
      * @param TyreCompound|null $compound The specific compound of tyre used during the stint (SOFT, MEDIUM, HARD, ...).
      * @param int|null $driverNumber The unique number assigned to an F1 driver (cf. Wikipedia).
@@ -27,7 +27,6 @@ class Stint
         public readonly int           $sessionKey,
         public readonly ?int          $stintNumber,
         public readonly ?int          $tyreAgeAtStart
-    )
-    {
+    ) {
     }
 }

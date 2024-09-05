@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Filter;
@@ -10,8 +11,7 @@ class NumberFilter implements InputFilter
     public function __construct(
         public readonly int|float      $value,
         public readonly FilterOperator $filterOperator = FilterOperator::Equal
-    )
-    {
+    ) {
     }
 
     public static function equal(int|float $value): self

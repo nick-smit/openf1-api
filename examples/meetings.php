@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use NickSmit\OpenF1Api\Factory\OpenF1ApiClientFactory;

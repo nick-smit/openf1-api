@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response;
@@ -32,7 +33,6 @@ class CarData
         public readonly int               $sessionKey,
         public readonly int               $speed,
         public readonly int               $throttle
-    )
-    {
+    ) {
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\RaceControl;
@@ -33,8 +34,7 @@ class RaceControl
         public readonly ?RaceControlScope   $scope,
         public readonly ?int                $sector,
         public readonly int                 $sessionKey,
-    )
-    {
+    ) {
 
     }
 }

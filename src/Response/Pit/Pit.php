@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Response\Pit;
@@ -22,8 +23,7 @@ class Pit
         public readonly int               $meetingKey,
         public readonly float             $pitDuration,
         public readonly int               $sessionKey,
-    )
-    {
+    ) {
 
     }
 }
