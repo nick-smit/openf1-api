@@ -27,3 +27,8 @@ You will find more examples in the [examples](examples) directory.
 ## License
 
 OpenF1 Api is made available under the MIT License (MIT). Please see the [License File](LICENSE) for more information.
+
+## Disclaimer
+
+OpenF1 is an unofficial project and is not associated in any way with the Formula 1 companies.
+F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.
