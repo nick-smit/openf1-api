@@ -17,14 +17,12 @@ class DateFilter
         public readonly ?DateTimeInterface $beforeDate = null
     )
     {
-        if ($this->exactDate === null && $this->afterDate === null && $this->beforeDate === null) {
+        if (!$this->exactDate instanceof DateTimeInterface && !$this->afterDate instanceof DateTimeInterface && !$this->beforeDate instanceof DateTimeInterface) {
             throw new InvalidArgumentException('Either one of exactDate, afterDate or beforeDate must not be null.');
         }
 
-        if ($this->exactDate !== null) {
-            if ($this->afterDate !== null || $this->beforeDate !== null) {
-                throw new InvalidArgumentException('exactDate cannot be used in combination with afterDate and beforeDate parameters.');
-            }
+        if ($this->exactDate !== null && ($this->afterDate instanceof DateTimeInterface || $this->beforeDate instanceof DateTimeInterface)) {
+            throw new InvalidArgumentException('exactDate cannot be used in combination with afterDate and beforeDate parameters.');
         }
     }
 

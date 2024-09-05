@@ -96,9 +96,9 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function ($item) {
+        return array_map(static function (array $item): CarData {
             $brake = Brake::tryFrom($item['brake']);
-            if ($brake === null) {
+            if (!$brake instanceof Brake) {
                 throw new UnexpectedResponseException(sprintf('Got unknown value (%s) for parameter brake', $item['brake']));
             }
 
@@ -138,8 +138,8 @@ class OpenF1ApiClient
             return $this->client->get($uri, [
                 RequestOptions::QUERY => $query,
             ]);
-        } catch (GuzzleException $e) {
-            throw new ApiUnavailableException($e->getMessage(), previous: $e);
+        } catch (GuzzleException $guzzleException) {
+            throw new ApiUnavailableException($guzzleException->getMessage(), previous: $guzzleException);
         }
     }
 
@@ -150,8 +150,8 @@ class OpenF1ApiClient
     {
         try {
             return json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            throw new UnexpectedResponseException('Invalid json response', $response, previous: $e);
+        } catch (JsonException $jsonException) {
+            throw new UnexpectedResponseException('Invalid json response', $response, previous: $jsonException);
         }
     }
 
@@ -238,22 +238,20 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Driver {
-            return new Driver(
-                $item['driver_number'],
-                $item['broadcast_name'],
-                $item['full_name'],
-                $item['name_acronym'],
-                $item['meeting_key'],
-                $item['session_key'],
-                $item['country_code'],
-                $item['first_name'],
-                $item['headshot_url'],
-                $item['last_name'],
-                $item['team_colour'],
-                $item['team_name'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Driver => new Driver(
+            $item['driver_number'],
+            $item['broadcast_name'],
+            $item['full_name'],
+            $item['name_acronym'],
+            $item['meeting_key'],
+            $item['session_key'],
+            $item['country_code'],
+            $item['first_name'],
+            $item['headshot_url'],
+            $item['last_name'],
+            $item['team_colour'],
+            $item['team_name'],
+        ), $decodedResponse);
     }
 
     /**
@@ -298,16 +296,14 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Interval {
-            return new Interval(
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                new TimeGap($item['gap_to_leader']),
-                new TimeGap($item['interval']),
-                $item['meeting_key'],
-                $item['session_key'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Interval => new Interval(
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            new TimeGap($item['gap_to_leader']),
+            new TimeGap($item['interval']),
+            $item['meeting_key'],
+            $item['session_key'],
+        ), $decodedResponse);
     }
 
     /**
@@ -437,17 +433,15 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Location {
-            return new Location(
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                $item['meeting_key'],
-                $item['session_key'],
-                $item['x'],
-                $item['y'],
-                $item['z'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Location => new Location(
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            $item['meeting_key'],
+            $item['session_key'],
+            $item['x'],
+            $item['y'],
+            $item['z'],
+        ), $decodedResponse);
     }
 
     //
@@ -466,7 +460,6 @@ class OpenF1ApiClient
     //	The type of the session (Practice, Qualifying, Race, ...).
     //	The year the event takes place.
     //
-
     /**
      * Provides information about meetings.
      * A meeting refers to a Grand Prix or testing weekend and usually includes multiple sessions (practice, qualifying, race, ...).
@@ -485,7 +478,6 @@ class OpenF1ApiClient
      * @param string|null $meetingOfficialName The official name of the meeting.
      * @param int|null $year The year the event takes place.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -526,22 +518,20 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Meeting {
-            return new Meeting(
-                $item['circuit_key'],
-                $item['circuit_short_name'],
-                $item['country_code'],
-                $item['country_key'],
-                $item['country_name'],
-                self::fromIso8601($item['date_start']),
-                $item['gmt_offset'],
-                $item['location'],
-                $item['meeting_key'],
-                $item['meeting_name'],
-                $item['meeting_official_name'],
-                $item['year'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Meeting => new Meeting(
+            $item['circuit_key'],
+            $item['circuit_short_name'],
+            $item['country_code'],
+            $item['country_key'],
+            $item['country_name'],
+            self::fromIso8601($item['date_start']),
+            $item['gmt_offset'],
+            $item['location'],
+            $item['meeting_key'],
+            $item['meeting_name'],
+            $item['meeting_official_name'],
+            $item['year'],
+        ), $decodedResponse);
     }
 
     /**
@@ -584,16 +574,14 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Pit {
-            return new Pit(
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                $item['lap_number'],
-                $item['meeting_key'],
-                $item['pit_duration'],
-                $item['session_key'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Pit => new Pit(
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            $item['lap_number'],
+            $item['meeting_key'],
+            $item['pit_duration'],
+            $item['session_key'],
+        ), $decodedResponse);
     }
 
     /**
@@ -606,7 +594,6 @@ class OpenF1ApiClient
      * @param NumberFilter|null $position Position of the driver (starts at 1).
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -633,15 +620,13 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Position {
-            return new Position(
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                $item['meeting_key'],
-                $item['position'],
-                $item['session_key'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Position => new Position(
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            $item['meeting_key'],
+            $item['position'],
+            $item['session_key'],
+        ), $decodedResponse);
     }
 
     /**
@@ -659,7 +644,6 @@ class OpenF1ApiClient
      * @param NumberFilter|null $sector Segment ("mini-sector") of the track where the event occurred? (starts at 1).
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -696,20 +680,18 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): RaceControl {
-            return new RaceControl(
-                RaceControlCategory::from($item['category']),
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                $item['flag'] !== null ? Flag::from($item['flag']) : null,
-                $item['lap_number'],
-                $item['meeting_key'],
-                $item['message'],
-                $item['scope'] !== null ? RaceControlScope::from($item['scope']) : null,
-                $item['sector'],
-                $item['session_key'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): RaceControl => new RaceControl(
+            RaceControlCategory::from($item['category']),
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            $item['flag'] !== null ? Flag::from($item['flag']) : null,
+            $item['lap_number'],
+            $item['meeting_key'],
+            $item['message'],
+            $item['scope'] !== null ? RaceControlScope::from($item['scope']) : null,
+            $item['sector'],
+            $item['session_key'],
+        ), $decodedResponse);
     }
 
     /**
@@ -732,7 +714,6 @@ class OpenF1ApiClient
      * @param SessionType|null $sessionType The type of the session (Practice, Qualifying, Race, ...).
      * @param int|null $year The year the event takes place.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -779,24 +760,22 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Session {
-            return new Session(
-                $item['circuit_key'],
-                $item['circuit_short_name'],
-                $item['country_code'],
-                $item['country_key'],
-                $item['country_name'],
-                self::fromIso8601($item['date_end']),
-                self::fromIso8601($item['date_start']),
-                $item['gmt_offset'],
-                $item['location'],
-                $item['meeting_key'],
-                $item['session_key'],
-                $item['session_name'],
-                SessionType::from($item['session_type']),
-                $item['year'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Session => new Session(
+            $item['circuit_key'],
+            $item['circuit_short_name'],
+            $item['country_code'],
+            $item['country_key'],
+            $item['country_name'],
+            self::fromIso8601($item['date_end']),
+            self::fromIso8601($item['date_start']),
+            $item['gmt_offset'],
+            $item['location'],
+            $item['meeting_key'],
+            $item['session_key'],
+            $item['session_name'],
+            SessionType::from($item['session_type']),
+            $item['year'],
+        ), $decodedResponse);
     }
 
     /**
@@ -813,7 +792,6 @@ class OpenF1ApiClient
      * @param NumberFilter|null $stintNumber The sequential number of the stint within the session (starts at 1).
      * @param NumberFilter|null $tyreAgeAtStart The age of the tyres at the start of the stint, in laps completed.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -846,18 +824,16 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Stint {
-            return new Stint(
-                $item['compound'] !== null ? TyreCompound::from($item['compound']) : null,
-                $item['driver_number'],
-                $item['lap_end'],
-                $item['lap_start'],
-                $item['meeting_key'],
-                $item['session_key'],
-                $item['stint_number'],
-                $item['tyre_age_at_start'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Stint => new Stint(
+            $item['compound'] !== null ? TyreCompound::from($item['compound']) : null,
+            $item['driver_number'],
+            $item['lap_end'],
+            $item['lap_start'],
+            $item['meeting_key'],
+            $item['session_key'],
+            $item['stint_number'],
+            $item['tyre_age_at_start'],
+        ), $decodedResponse);
     }
 
     /**
@@ -870,7 +846,6 @@ class OpenF1ApiClient
      * @param IdFilter|null $meetingKey The unique identifier for the meeting. Use latest to identify the latest or current meeting.
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -895,15 +870,13 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): TeamRadio {
-            return new TeamRadio(
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                $item['meeting_key'],
-                $item['recording_url'],
-                $item['session_key'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): TeamRadio => new TeamRadio(
+            self::fromIso8601($item['date']),
+            $item['driver_number'],
+            $item['meeting_key'],
+            $item['recording_url'],
+            $item['session_key'],
+        ), $decodedResponse);
     }
 
     /**
@@ -921,7 +894,6 @@ class OpenF1ApiClient
      * @param NumberFilter|null $windDirection Wind direction (°), from 0° to 359°.
      * @param NumberFilter|null $windSpeed Wind speed (m/s).
      *
-     * @return array
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -958,19 +930,17 @@ class OpenF1ApiClient
 
         $this->assertResponseIsArray($decodedResponse, $response);
 
-        return array_map(static function (array $item): Weather {
-            return new Weather(
-                $item['air_temperature'],
-                self::fromIso8601($item['date']),
-                $item['humidity'],
-                $item['meeting_key'],
-                $item['pressure'],
-                $item['rainfall'],
-                $item['session_key'],
-                $item['track_temperature'],
-                $item['wind_direction'],
-                $item['wind_speed'],
-            );
-        }, $decodedResponse);
+        return array_map(static fn(array $item): Weather => new Weather(
+            $item['air_temperature'],
+            self::fromIso8601($item['date']),
+            $item['humidity'],
+            $item['meeting_key'],
+            $item['pressure'],
+            $item['rainfall'],
+            $item['session_key'],
+            $item['track_temperature'],
+            $item['wind_direction'],
+            $item['wind_speed'],
+        ), $decodedResponse);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace NickSmit\OpenF1Api\Filter;
 
 use NickSmit\OpenF1Api\Exception\InvalidArgumentException;
+use Override;
 
 class IdFilter implements InputFilter
 {
@@ -15,7 +16,7 @@ class IdFilter implements InputFilter
         public readonly bool $latest = false,
     )
     {
-        if ($this->id !== null && $this->latest === true) {
+        if ($this->id !== null && $this->latest) {
             throw new InvalidArgumentException('Exact and latest cannot be set at the same time');
         }
 
@@ -34,11 +35,13 @@ class IdFilter implements InputFilter
         return new self(latest: true);
     }
 
+    #[Override]
     public function getFilterOperator(): FilterOperator
     {
         return FilterOperator::Equal;
     }
 
+    #[Override]
     public function getValue(): string|int
     {
         if ($this->latest) {

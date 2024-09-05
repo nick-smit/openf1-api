@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace NickSmit\OpenF1Api\Filter;
 
+use Override;
+
 class NumberFilter implements InputFilter
 {
     public function __construct(
@@ -27,11 +29,13 @@ class NumberFilter implements InputFilter
         return new self($value, FilterOperator::LessThan);
     }
 
+    #[Override]
     public function getFilterOperator(): FilterOperator
     {
         return $this->filterOperator;
     }
 
+    #[Override]
     public function getValue(): int|float
     {
         return $this->value;

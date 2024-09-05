@@ -49,20 +49,20 @@ class QueryParameterFactory
 
     private function handleDateFilter(?DateFilter $dateFilter, array $queryParams): array
     {
-        if ($dateFilter === null) {
+        if (!$dateFilter instanceof DateFilter) {
             return $queryParams;
         }
 
-        if ($dateFilter->exactDate !== null) {
+        if ($dateFilter->exactDate instanceof DateTimeInterface) {
             $queryParams['date'] = $dateFilter->exactDate->format(DateTimeInterface::ATOM);
             return $queryParams;
         }
 
-        if ($dateFilter->afterDate !== null) {
+        if ($dateFilter->afterDate instanceof DateTimeInterface) {
             $queryParams['date_start>'] = $dateFilter->afterDate->format(DateTimeInterface::ATOM);
         }
 
-        if ($dateFilter->beforeDate !== null) {
+        if ($dateFilter->beforeDate instanceof DateTimeInterface) {
             $queryParams['date_end<'] = $dateFilter->beforeDate->format(DateTimeInterface::ATOM);
         }
 
