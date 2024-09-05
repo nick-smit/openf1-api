@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Factory;
+namespace NickSmit\OpenF1Api\Tests\Unit\Factory;
 
 use NickSmit\OpenF1Api\Client\OpenF1ApiClient;
 use NickSmit\OpenF1Api\Factory\OpenF1ApiClientFactory;

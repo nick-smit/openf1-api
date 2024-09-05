@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Transformer;
+namespace NickSmit\OpenF1Api\Tests\Unit\Transformer;
 
 use DateTimeImmutable;
 use DateTimeZone;

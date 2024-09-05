@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Filter;
+namespace NickSmit\OpenF1Api\Tests\Unit\Filter;
 
 use NickSmit\OpenF1Api\Exception\InvalidArgumentException;
 use NickSmit\OpenF1Api\Filter\FilterOperator;

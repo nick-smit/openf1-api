@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Factory;
+namespace NickSmit\OpenF1Api\Tests\Unit\Factory;
 
 use DateTimeImmutable;
 use DateTimeZone;
