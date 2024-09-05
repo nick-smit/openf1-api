@@ -14,6 +14,6 @@ class OpenF1ApiClientFactory
     ): OpenF1ApiClient {
         $client = new Client(array_merge(['base_uri' => 'https://api.openf1.org/v1'], $guzzleConfig));
 
-        return new OpenF1ApiClient($client, new QueryParameterFactory());
+        return new OpenF1ApiClient(new ApiRequestFactory($client, new QueryParameterFactory()));
     }
 }

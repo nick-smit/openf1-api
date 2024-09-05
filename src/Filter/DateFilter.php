@@ -7,21 +7,21 @@ namespace NickSmit\OpenF1Api\Filter;
 use DateTimeInterface;
 use NickSmit\OpenF1Api\Exception\InvalidArgumentException;
 
-class DateFilter
+readonly class DateFilter
 {
     /**
      * @throws InvalidArgumentException
      */
     public function __construct(
-        public readonly ?DateTimeInterface $exactDate = null,
-        public readonly ?DateTimeInterface $afterDate = null,
-        public readonly ?DateTimeInterface $beforeDate = null
+        public ?DateTimeInterface $exactDate = null,
+        public ?DateTimeInterface $afterDate = null,
+        public ?DateTimeInterface $beforeDate = null
     ) {
         if (!$this->exactDate instanceof DateTimeInterface && !$this->afterDate instanceof DateTimeInterface && !$this->beforeDate instanceof DateTimeInterface) {
             throw new InvalidArgumentException('Either one of exactDate, afterDate or beforeDate must not be null.');
         }
 
-        if ($this->exactDate !== null && ($this->afterDate instanceof DateTimeInterface || $this->beforeDate instanceof DateTimeInterface)) {
+        if ($this->exactDate instanceof \DateTimeInterface && ($this->afterDate instanceof DateTimeInterface || $this->beforeDate instanceof DateTimeInterface)) {
             throw new InvalidArgumentException('exactDate cannot be used in combination with afterDate and beforeDate parameters.');
         }
     }

@@ -6,11 +6,11 @@ namespace NickSmit\OpenF1Api\Filter;
 
 use Override;
 
-class NumberFilter implements InputFilter
+readonly class NumberFilter implements InputFilter
 {
     public function __construct(
-        public readonly int|float      $value,
-        public readonly FilterOperator $filterOperator = FilterOperator::Equal
+        public int|float      $value,
+        public FilterOperator $filterOperator = FilterOperator::Equal
     ) {
     }
 

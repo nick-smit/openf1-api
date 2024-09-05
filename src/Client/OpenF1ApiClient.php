@@ -6,47 +6,49 @@ namespace NickSmit\OpenF1Api\Client;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\RequestOptions;
-use JsonException;
-use NickSmit\OpenF1Api\Enumeration\Brake;
-use NickSmit\OpenF1Api\Enumeration\DRS;
-use NickSmit\OpenF1Api\Enumeration\Flag;
-use NickSmit\OpenF1Api\Enumeration\RaceControlCategory;
-use NickSmit\OpenF1Api\Enumeration\RaceControlScope;
-use NickSmit\OpenF1Api\Enumeration\SegmentSector;
-use NickSmit\OpenF1Api\Enumeration\SessionType;
-use NickSmit\OpenF1Api\Enumeration\TyreCompound;
+use NickSmit\OpenF1Api\Endpoint\CarData\CarData;
+use NickSmit\OpenF1Api\Endpoint\CarData\CarDataRequest;
+use NickSmit\OpenF1Api\Endpoint\Drivers\Driver;
+use NickSmit\OpenF1Api\Endpoint\Drivers\DriversRequest;
+use NickSmit\OpenF1Api\Endpoint\Intervals\Interval;
+use NickSmit\OpenF1Api\Endpoint\Intervals\IntervalsRequest;
+use NickSmit\OpenF1Api\Endpoint\Laps\Lap;
+use NickSmit\OpenF1Api\Endpoint\Laps\LapsRequest;
+use NickSmit\OpenF1Api\Endpoint\Location\Location;
+use NickSmit\OpenF1Api\Endpoint\Location\LocationRequest;
+use NickSmit\OpenF1Api\Endpoint\Meetings\Meeting;
+use NickSmit\OpenF1Api\Endpoint\Meetings\MeetingsRequest;
+use NickSmit\OpenF1Api\Endpoint\Pit\Pit;
+use NickSmit\OpenF1Api\Endpoint\Pit\PitRequest;
+use NickSmit\OpenF1Api\Endpoint\Position\Position;
+use NickSmit\OpenF1Api\Endpoint\Position\PositionRequest;
+use NickSmit\OpenF1Api\Endpoint\RaceControl\Category;
+use NickSmit\OpenF1Api\Endpoint\RaceControl\Flag;
+use NickSmit\OpenF1Api\Endpoint\RaceControl\RaceControl;
+use NickSmit\OpenF1Api\Endpoint\RaceControl\RaceControlRequest;
+use NickSmit\OpenF1Api\Endpoint\RaceControl\Scope;
+use NickSmit\OpenF1Api\Endpoint\Sessions\Session;
+use NickSmit\OpenF1Api\Endpoint\Sessions\SessionsRequest;
+use NickSmit\OpenF1Api\Endpoint\Sessions\SessionType;
+use NickSmit\OpenF1Api\Endpoint\Stints\Stint;
+use NickSmit\OpenF1Api\Endpoint\Stints\StintsRequest;
+use NickSmit\OpenF1Api\Endpoint\Stints\TyreCompound;
+use NickSmit\OpenF1Api\Endpoint\TeamRadio\TeamRadio;
+use NickSmit\OpenF1Api\Endpoint\TeamRadio\TeamRadioRequest;
+use NickSmit\OpenF1Api\Endpoint\Weather\Weather;
+use NickSmit\OpenF1Api\Endpoint\Weather\WeatherRequest;
 use NickSmit\OpenF1Api\Exception\ApiUnavailableException;
 use NickSmit\OpenF1Api\Exception\InvalidArgumentException;
 use NickSmit\OpenF1Api\Exception\UnexpectedResponseException;
-use NickSmit\OpenF1Api\Factory\QueryParameterFactory;
+use NickSmit\OpenF1Api\Factory\ApiRequestFactory;
 use NickSmit\OpenF1Api\Filter\DateFilter;
 use NickSmit\OpenF1Api\Filter\IdFilter;
 use NickSmit\OpenF1Api\Filter\NumberFilter;
-use NickSmit\OpenF1Api\Response\CarData;
-use NickSmit\OpenF1Api\Response\Driver;
-use NickSmit\OpenF1Api\Response\Interval\Interval;
-use NickSmit\OpenF1Api\Response\Interval\TimeGap;
-use NickSmit\OpenF1Api\Response\Lap\Lap;
-use NickSmit\OpenF1Api\Response\Location\Location;
-use NickSmit\OpenF1Api\Response\Meeting\Meeting;
-use NickSmit\OpenF1Api\Response\Pit\Pit;
-use NickSmit\OpenF1Api\Response\Position\Position;
-use NickSmit\OpenF1Api\Response\RaceControl\RaceControl;
-use NickSmit\OpenF1Api\Response\Session\Session;
-use NickSmit\OpenF1Api\Response\Stint\Stint;
-use NickSmit\OpenF1Api\Response\TeamRadio\TeamRadio;
-use NickSmit\OpenF1Api\Response\Weather\Weather;
-use Psr\Http\Message\ResponseInterface;
 
-class OpenF1ApiClient
+readonly class OpenF1ApiClient
 {
     public function __construct(
-        private readonly Client                $client,
-        private readonly QueryParameterFactory $queryParameterFactory
+        private ApiRequestFactory $apiRequestFactory,
     ) {
     }
 
@@ -78,105 +80,16 @@ class OpenF1ApiClient
         ?NumberFilter $speed = null,
         ?NumberFilter $throttle = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'meeting_key' => $meetingKey,
-            'n_gear' => $nGear,
-            'rpm' => $rpm,
-            'session_key' => $sessionKey,
-            'speed' => $speed,
-            'throttle' => $throttle,
-        ]);
-
-        $response = $this->getResponse('v1/car_data', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static function (array $item): CarData {
-            $brake = Brake::tryFrom($item['brake']);
-            if (!$brake instanceof Brake) {
-                throw new UnexpectedResponseException(sprintf('Got unknown value (%s) for parameter brake', $item['brake']));
-            }
-
-            return new CarData(
-                $brake,
-                self::fromIso8601($item['date']),
-                $item['driver_number'],
-                DRS::fromInt($item['drs']),
-                $item['meeting_key'],
-                $item['n_gear'],
-                $item['rpm'],
-                $item['session_key'],
-                $item['speed'],
-                $item['throttle'],
-            );
-        }, $decodedResponse);
-    }
-
-    /**
-     * @throws ApiUnavailableException
-     */
-    private function getResponse(string $uri, array $queryParams): ResponseInterface
-    {
-        $queryParams = array_filter($queryParams);
-
-        // Custom query creation as PHP always encodes greater than and less than characters in parameter keys
-        $query = '';
-        foreach ($queryParams as $key => $value) {
-            if ($query !== '') {
-                $query .= '&';
-            }
-
-            $query .= $key . '=' . urlencode((string)$value);
-        }
-
-        try {
-            return $this->client->get($uri, [
-                RequestOptions::QUERY => $query,
-            ]);
-        } catch (GuzzleException $guzzleException) {
-            throw new ApiUnavailableException($guzzleException->getMessage(), previous: $guzzleException);
-        }
-    }
-
-    /**
-     * @throws UnexpectedResponseException
-     */
-    private function decodeResponse(ResponseInterface $response): mixed
-    {
-        try {
-            return json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException $jsonException) {
-            throw new UnexpectedResponseException('Invalid json response', $response, previous: $jsonException);
-        }
-    }
-
-    private function assertResponseIsArray(mixed $decodedResponse, ResponseInterface $response): void
-    {
-        if (!is_array($decodedResponse)) {
-            throw new UnexpectedResponseException('Array response was expected', $response);
-        }
-    }
-
-    /**
-     * @throws UnexpectedResponseException
-     */
-    public static function fromIso8601(string $value): DateTimeImmutable
-    {
-        $date = DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s.uP', $value, new DateTimeZone('UTC'));
-
-        if ($date === false) {
-            $date = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $value, new DateTimeZone('UTC'));
-
-            if ($date === false) {
-                throw new UnexpectedResponseException(sprintf('Date %s is not in ISO8601 format.', $value));
-            }
-        }
-
-        return $date;
+        return $this->apiRequestFactory->create(CarDataRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $meetingKey,
+            $nGear,
+            $rpm,
+            $sessionKey,
+            $speed,
+            $throttle,
+        );
     }
 
     /**
@@ -215,41 +128,20 @@ class OpenF1ApiClient
         ?string   $teamColour = null,
         ?string   $teamName = null
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'broadcast_name' => $broadcastName,
-            'country_code' => $countryCode,
-            'driver_number' => $driverNumber,
-            'first_name' => $firstName,
-            'full_name' => $fullName,
-            'headshot_url' => $headshotUrl,
-            'last_name' => $lastName,
-            'meeting_key' => $meetingKey,
-            'name_acronym' => $nameAcronym,
-            'session_key' => $sessionKey,
-            'team_colour' => $teamColour,
-            'team_name' => $teamName,
-        ]);
-
-        $response = $this->getResponse('v1/drivers', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Driver => new Driver(
-            $item['driver_number'],
-            $item['broadcast_name'],
-            $item['full_name'],
-            $item['name_acronym'],
-            $item['meeting_key'],
-            $item['session_key'],
-            $item['country_code'],
-            $item['first_name'],
-            $item['headshot_url'],
-            $item['last_name'],
-            $item['team_colour'],
-            $item['team_name'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(DriversRequest::class)->exec(
+            $broadcastName,
+            $countryCode,
+            $driverNumber,
+            $firstName,
+            $fullName,
+            $headshotUrl,
+            $lastName,
+            $meetingKey,
+            $nameAcronym,
+            $sessionKey,
+            $teamColour,
+            $teamName,
+        );
     }
 
     /**
@@ -278,29 +170,14 @@ class OpenF1ApiClient
         ?IdFilter     $meetingKey = null,
         ?IdFilter     $sessionKey = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'gap_to_leader' => $gapToLeader,
-            'interval' => $interval,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-        ]);
-
-        $response = $this->getResponse('v1/intervals', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Interval => new Interval(
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            new TimeGap($item['gap_to_leader']),
-            new TimeGap($item['interval']),
-            $item['meeting_key'],
-            $item['session_key'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(IntervalsRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $gapToLeader,
+            $interval,
+            $meetingKey,
+            $sessionKey,
+        );
     }
 
     /**
@@ -319,7 +196,9 @@ class OpenF1ApiClient
      * @param IdFilter|null $meetingKey The unique identifier for the meeting. Use latest to identify the latest or current meeting.
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      * @param NumberFilter|null $stSpeed The speed of the car, in km/h, at the speed trap, which is a specific point on the track where the highest speeds are usually recorded.
+     *
      * @return Lap[]
+     *
      * @throws ApiUnavailableException
      * @throws InvalidArgumentException
      * @throws UnexpectedResponseException
@@ -338,49 +217,20 @@ class OpenF1ApiClient
         ?IdFilter     $sessionKey = null,
         ?NumberFilter $stSpeed = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'driver_number' => $driverNumber,
-            'duration_sector_1' => $durationSector1,
-            'duration_sector_2' => $durationSector2,
-            'duration_sector_3' => $durationSector3,
-            'i1_speed' => $i1Speed,
-            'i2_speed' => $i2Speed,
-            'is_pit_out_lap' => $isPitOutLap,
-            'lap_duration' => $lapDuration,
-            'lap_number' => $lapNumber,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-            'st_speed' => $stSpeed,
-        ]);
-
-        $response = $this->getResponse('v1/laps', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static function (array $item): Lap {
-            $segmentSectorToEnum = static fn (int $segment): SegmentSector => SegmentSector::fromInt($segment);
-
-            return new Lap(
-                self::fromIso8601($item['date_start']),
-                $item['driver_number'],
-                $item['duration_sector_1'],
-                $item['duration_sector_2'],
-                $item['duration_sector_3'],
-                $item['i1_speed'],
-                $item['i2_speed'],
-                $item['is_pit_out_lap'],
-                $item['lap_duration'],
-                $item['lap_number'],
-                $item['meeting_key'],
-                array_map($segmentSectorToEnum, $item['segments_sector_1']),
-                array_map($segmentSectorToEnum, $item['segments_sector_2']),
-                array_map($segmentSectorToEnum, $item['segments_sector_3']),
-                $item['session_key'],
-                $item['st_speed'],
-            );
-        }, $decodedResponse);
+        return $this->apiRequestFactory->create(LapsRequest::class)->exec(
+            $driverNumber,
+            $durationSector1,
+            $durationSector2,
+            $durationSector3,
+            $i1Speed,
+            $i2Speed,
+            $isPitOutLap,
+            $lapDuration,
+            $lapNumber,
+            $meetingKey,
+            $sessionKey,
+            $stSpeed,
+        );
     }
 
     /**
@@ -412,49 +262,17 @@ class OpenF1ApiClient
         ?int        $y = null,
         ?int        $z = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-            'x' => $x,
-            'y' => $y,
-            'z' => $z,
-        ]);
-
-        $response = $this->getResponse('v1/location', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Location => new Location(
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            $item['meeting_key'],
-            $item['session_key'],
-            $item['x'],
-            $item['y'],
-            $item['z'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(LocationRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $meetingKey,
+            $sessionKey,
+            $x,
+            $y,
+            $z,
+        );
     }
 
-    //
-    // 	The unique identifier for the circuit where the event takes place.
-    //	The short or common name of the circuit where the event takes place.
-    //	A code that uniquely identifies the country.
-    //	The unique identifier for the country where the event takes place.
-    //	The full name of the country where the event takes place.
-    //	The UTC ending date and time, in ISO 8601 format.
-    //	The UTC starting date and time, in ISO 8601 format.
-    //	The difference in hours and minutes between local time at the location of the event and Greenwich Mean Time (GMT).
-    //	The city or geographical location where the event takes place.
-    //	The unique identifier for the meeting. Use latest to identify the latest or current meeting.
-    //	The unique identifier for the session. Use latest to identify the latest or current session.
-    //	The name of the session (Practice 1, Qualifying, Race, ...).
-    //	The type of the session (Practice, Qualifying, Race, ...).
-    //	The year the event takes place.
-    //
     /**
      * Provides information about meetings.
      * A meeting refers to a Grand Prix or testing weekend and usually includes multiple sessions (practice, qualifying, race, ...).
@@ -473,6 +291,7 @@ class OpenF1ApiClient
      * @param string|null $meetingOfficialName The official name of the meeting.
      * @param int|null $year The year the event takes place.
      *
+     * @return Meeting[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -491,41 +310,20 @@ class OpenF1ApiClient
         ?string            $meetingOfficialName = null,
         ?int               $year = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'circuit_key' => $circuitKey,
-            'circuit_short_name' => $circuitShortName,
-            'country_code' => $countryCode,
-            'country_key' => $countryKey,
-            'country_name' => $countryName,
-            'date_start' => $dateStart,
-            'gmt_offset' => $gmtOffset,
-            'location' => $location,
-            'meeting_key' => $meetingKey,
-            'meeting_name' => $meetingName,
-            'meeting_official_name' => $meetingOfficialName,
-            'year' => $year,
-        ]);
-
-        $response = $this->getResponse('v1/meetings', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Meeting => new Meeting(
-            $item['circuit_key'],
-            $item['circuit_short_name'],
-            $item['country_code'],
-            $item['country_key'],
-            $item['country_name'],
-            self::fromIso8601($item['date_start']),
-            $item['gmt_offset'],
-            $item['location'],
-            $item['meeting_key'],
-            $item['meeting_name'],
-            $item['meeting_official_name'],
-            $item['year'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(MeetingsRequest::class)->exec(
+            $circuitKey,
+            $circuitShortName,
+            $countryCode,
+            $countryKey,
+            $countryName,
+            $dateStart,
+            $gmtOffset,
+            $location,
+            $meetingKey,
+            $meetingName,
+            $meetingOfficialName,
+            $year,
+        );
     }
 
     /**
@@ -552,29 +350,14 @@ class OpenF1ApiClient
         ?NumberFilter $pitDuration = null,
         ?IdFilter     $sessionKey = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'lap_number' => $lapNumber,
-            'meeting_key' => $meetingKey,
-            'pit_duration' => $pitDuration,
-            'session_key' => $sessionKey,
-        ]);
-
-        $response = $this->getResponse('v1/pit', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Pit => new Pit(
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            $item['lap_number'],
-            $item['meeting_key'],
-            $item['pit_duration'],
-            $item['session_key'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(PitRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $lapNumber,
+            $meetingKey,
+            $pitDuration,
+            $sessionKey,
+        );
     }
 
     /**
@@ -587,6 +370,7 @@ class OpenF1ApiClient
      * @param NumberFilter|null $position Position of the driver (starts at 1).
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
+     * @return Position[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -598,91 +382,59 @@ class OpenF1ApiClient
         ?NumberFilter $position = null,
         ?IdFilter     $sessionKey = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'meeting_key' => $meetingKey,
-            'position' => $position,
-            'session_key' => $sessionKey,
-        ]);
-
-        $response = $this->getResponse('v1/position', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Position => new Position(
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            $item['meeting_key'],
-            $item['position'],
-            $item['session_key'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(PositionRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $meetingKey,
+            $position,
+            $sessionKey,
+        );
     }
 
     /**
      * Provides information about race control (racing incidents, flags, safety car, ...).
      * @see https://openf1.org/#race-control
      *
-     * @param RaceControlCategory|null $category The category of the event (CarEvent, Drs, Flag, SafetyCar, ...).
+     * @param Category|null $category The category of the event (CarEvent, Drs, Flag, SafetyCar, ...).
      * @param DateFilter|null $date The UTC date and time, in ISO 8601 format.
      * @param int|null $driverNumber The unique number assigned to an F1 driver (cf. Wikipedia).
      * @param Flag|null $flag Type of flag displayed (GREEN, YELLOW, DOUBLE YELLOW, CHEQUERED, ...).
      * @param NumberFilter|null $lapNumber The sequential number of the lap within the session (starts at 1).
      * @param IdFilter|null $meetingKey The unique identifier for the meeting. Use latest to identify the latest or current meeting.
      * @param string|null $message Description of the event or action.
-     * @param RaceControlScope|null $scope The scope of the event (Track, Driver, Sector, ...).
+     * @param Scope|null $scope The scope of the event (Track, Driver, Sector, ...).
      * @param NumberFilter|null $sector Segment ("mini-sector") of the track where the event occurred? (starts at 1).
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
+     * @return RaceControl[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
      */
     public function raceControl(
-        ?RaceControlCategory $category = null,
-        ?DateFilter          $date = null,
-        ?int                 $driverNumber = null,
-        ?Flag                $flag = null,
-        ?NumberFilter        $lapNumber = null,
-        ?IdFilter            $meetingKey = null,
-        ?string              $message = null,
-        ?RaceControlScope    $scope = null,
-        ?NumberFilter        $sector = null,
-        ?IdFilter            $sessionKey = null,
+        ?Category     $category = null,
+        ?DateFilter   $date = null,
+        ?int          $driverNumber = null,
+        ?Flag         $flag = null,
+        ?NumberFilter $lapNumber = null,
+        ?IdFilter     $meetingKey = null,
+        ?string       $message = null,
+        ?Scope        $scope = null,
+        ?NumberFilter $sector = null,
+        ?IdFilter     $sessionKey = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'category' => $category,
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'flag' => $flag,
-            'lap_number' => $lapNumber,
-            'meeting_key' => $meetingKey,
-            'message' => $message,
-            'scope' => $scope,
-            'sector' => $sector,
-            'session_key' => $sessionKey,
-        ]);
-
-        $response = $this->getResponse('v1/race_control', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): RaceControl => new RaceControl(
-            RaceControlCategory::from($item['category']),
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            $item['flag'] !== null ? Flag::from($item['flag']) : null,
-            $item['lap_number'],
-            $item['meeting_key'],
-            $item['message'],
-            $item['scope'] !== null ? RaceControlScope::from($item['scope']) : null,
-            $item['sector'],
-            $item['session_key'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(RaceControlRequest::class)->exec(
+            $category,
+            $date,
+            $driverNumber,
+            $flag,
+            $lapNumber,
+            $meetingKey,
+            $message,
+            $scope,
+            $sector,
+            $sessionKey,
+        );
     }
 
     /**
@@ -705,11 +457,10 @@ class OpenF1ApiClient
      * @param SessionType|null $sessionType The type of the session (Practice, Qualifying, Race, ...).
      * @param int|null $year The year the event takes place.
      *
+     * @return Session[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
-     * @see
-     *
      */
     public function sessions(
         ?int               $circuitKey = null,
@@ -727,45 +478,22 @@ class OpenF1ApiClient
         ?SessionType       $sessionType = null,
         ?int               $year = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'circuit_key' => $circuitKey,
-            'circuit_short_name' => $circuitShortName,
-            'country_code' => $countryCode,
-            'country_key' => $countryKey,
-            'country_name' => $countryName,
-            'date_end' => $dateEnd,
-            'date_start' => $dateStart,
-            'gmt_offset' => $gmtOffset,
-            'location' => $location,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-            'session_name' => $sessionName,
-            'session_type' => $sessionType,
-            'year' => $year,
-        ]);
-
-        $response = $this->getResponse('v1/sessions', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Session => new Session(
-            $item['circuit_key'],
-            $item['circuit_short_name'],
-            $item['country_code'],
-            $item['country_key'],
-            $item['country_name'],
-            self::fromIso8601($item['date_end']),
-            self::fromIso8601($item['date_start']),
-            $item['gmt_offset'],
-            $item['location'],
-            $item['meeting_key'],
-            $item['session_key'],
-            $item['session_name'],
-            SessionType::from($item['session_type']),
-            $item['year'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(SessionsRequest::class)->exec(
+            $circuitKey,
+            $circuitShortName,
+            $countryCode,
+            $countryKey,
+            $countryName,
+            $dateEnd,
+            $dateStart,
+            $gmtOffset,
+            $location,
+            $meetingKey,
+            $sessionKey,
+            $sessionName,
+            $sessionType,
+            $year,
+        );
     }
 
     /**
@@ -782,6 +510,7 @@ class OpenF1ApiClient
      * @param NumberFilter|null $stintNumber The sequential number of the stint within the session (starts at 1).
      * @param NumberFilter|null $tyreAgeAtStart The age of the tyres at the start of the stint, in laps completed.
      *
+     * @return Stint[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -796,33 +525,16 @@ class OpenF1ApiClient
         ?NumberFilter $stintNumber = null,
         ?NumberFilter $tyreAgeAtStart = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'compound' => $compound,
-            'driver_number' => $driverNumber,
-            'lap_end' => $lapEnd,
-            'lap_start' => $lapStart,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-            'stint_number' => $stintNumber,
-            'tyre_age_at_start' => $tyreAgeAtStart,
-        ]);
-
-        $response = $this->getResponse('v1/stints', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Stint => new Stint(
-            $item['compound'] !== null ? TyreCompound::from($item['compound']) : null,
-            $item['driver_number'],
-            $item['lap_end'],
-            $item['lap_start'],
-            $item['meeting_key'],
-            $item['session_key'],
-            $item['stint_number'],
-            $item['tyre_age_at_start'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(StintsRequest::class)->exec(
+            $compound,
+            $driverNumber,
+            $lapEnd,
+            $lapStart,
+            $meetingKey,
+            $sessionKey,
+            $stintNumber,
+            $tyreAgeAtStart,
+        );
     }
 
     /**
@@ -835,6 +547,7 @@ class OpenF1ApiClient
      * @param IdFilter|null $meetingKey The unique identifier for the meeting. Use latest to identify the latest or current meeting.
      * @param IdFilter|null $sessionKey The unique identifier for the session. Use latest to identify the latest or current session.
      *
+     * @return TeamRadio[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -845,26 +558,12 @@ class OpenF1ApiClient
         ?IdFilter   $meetingKey = null,
         ?IdFilter   $sessionKey = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'date' => $date,
-            'driver_number' => $driverNumber,
-            'meeting_key' => $meetingKey,
-            'session_key' => $sessionKey,
-        ]);
-
-        $response = $this->getResponse('v1/team_radio', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): TeamRadio => new TeamRadio(
-            self::fromIso8601($item['date']),
-            $item['driver_number'],
-            $item['meeting_key'],
-            $item['recording_url'],
-            $item['session_key'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(TeamRadioRequest::class)->exec(
+            $date,
+            $driverNumber,
+            $meetingKey,
+            $sessionKey,
+        );
     }
 
     /**
@@ -882,6 +581,7 @@ class OpenF1ApiClient
      * @param NumberFilter|null $windDirection Wind direction (°), from 0° to 359°.
      * @param NumberFilter|null $windSpeed Wind speed (m/s).
      *
+     * @return Weather[]
      *
      * @throws ApiUnavailableException
      * @throws UnexpectedResponseException
@@ -898,36 +598,17 @@ class OpenF1ApiClient
         ?NumberFilter $windDirection = null,
         ?NumberFilter $windSpeed = null,
     ): array {
-        $queryParams = $this->queryParameterFactory->createParameters([
-            'air_temperature' => $airTemperature,
-            'date' => $date,
-            'humidity' => $humidity,
-            'meeting_key' => $meetingKey,
-            'pressure' => $pressure,
-            'rainfall' => $rainfall,
-            'session_key' => $sessionKey,
-            'track_temperature' => $trackTemperature,
-            'wind_direction' => $windDirection,
-            'wind_speed' => $windSpeed,
-        ]);
-
-        $response = $this->getResponse('v1/weather', $queryParams);
-
-        $decodedResponse = $this->decodeResponse($response);
-
-        $this->assertResponseIsArray($decodedResponse, $response);
-
-        return array_map(static fn (array $item): Weather => new Weather(
-            $item['air_temperature'],
-            self::fromIso8601($item['date']),
-            $item['humidity'],
-            $item['meeting_key'],
-            $item['pressure'],
-            $item['rainfall'],
-            $item['session_key'],
-            $item['track_temperature'],
-            $item['wind_direction'],
-            $item['wind_speed'],
-        ), $decodedResponse);
+        return $this->apiRequestFactory->create(WeatherRequest::class)->exec(
+            $airTemperature,
+            $date,
+            $humidity,
+            $meetingKey,
+            $pressure,
+            $rainfall,
+            $sessionKey,
+            $trackTemperature,
+            $windDirection,
+            $windSpeed,
+        );
     }
 }

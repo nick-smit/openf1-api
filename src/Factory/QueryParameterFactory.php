@@ -45,17 +45,15 @@ class QueryParameterFactory
         };
 
         $queryParams[$paramName] = $inputFilter->getValue();
+
         return $queryParams;
     }
 
-    private function handleDateFilter(?DateFilter $dateFilter, array $queryParams): array
+    private function handleDateFilter(DateFilter $dateFilter, array $queryParams): array
     {
-        if (!$dateFilter instanceof DateFilter) {
-            return $queryParams;
-        }
-
         if ($dateFilter->exactDate instanceof DateTimeInterface) {
             $queryParams['date'] = $dateFilter->exactDate->format(DateTimeInterface::ATOM);
+
             return $queryParams;
         }
 
